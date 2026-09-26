@@ -31,7 +31,6 @@ def infer(req, dir_=DIR):
     except json.JSONDecodeError:
         return r.returncode, {"decision": "INVALID", "reason": r.stdout.decode()[:200]}
 import os as _os
-_os.chdir("/")  # infer must be cwd-independent (regression: relative paths)
 
 # a valid embedding from the untouched test split
 d = np.load(os.path.join(DIR, "emb_sample.npz"))
@@ -41,6 +40,23 @@ def split_of(c):
     return "train" if b < 70 else ("cal" if b < 85 else "test")
 test_idx = [i for i, c in enumerate(d["company_id"]) if split_of(str(c)) == "test"]
 GOOD = [float(v) for v in d["X"][test_idx[0]]]
+
+# REAL cwd-independence guard (regression: infer.py once used relative
+# artifact paths and silently escalated when run outside the skill dir).
+# Absolute script path, cwd="/": must load artifacts and decide — a valid
+# embedding passing input validation reaches the model, so the reason must
+# be a confidence reason, never "artifact missing".
+_r = subprocess.run([PY, _os.path.join(DIR, "infer.py")], cwd="/",
+                    input=json.dumps({"embedding": GOOD, "target": 0.90}).encode(),
+                    capture_output=True)
+try:
+    _out = json.loads(_r.stdout)
+    check("infer.py from cwd=/ loads artifacts and decides",
+          _out["decision"] in ("act", "escalate")
+          and "artifact" not in _out["reason"]
+          and "tau" in json.dumps(_out))
+except json.JSONDecodeError:
+    check("infer.py from cwd=/ loads artifacts and decides", False)
 
 print("[valid request]")
 rc, out = infer({"embedding": GOOD, "target": 0.85})
