@@ -30,7 +30,8 @@ def infer(req, dir_=DIR):
         return r.returncode, json.loads(r.stdout)
     except json.JSONDecodeError:
         return r.returncode, {"decision": "INVALID", "reason": r.stdout.decode()[:200]}
-
+import os as _os
+_os.chdir("/")  # infer must be cwd-independent (regression: relative paths)
 
 # a valid embedding from the untouched test split
 d = np.load(os.path.join(DIR, "emb_sample.npz"))

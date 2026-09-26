@@ -25,10 +25,14 @@ import numpy as np
 from jev import Question
 from train_real_emb import EmbModel
 
+import os
+
+DIR = os.path.dirname(os.path.abspath(__file__))
+
 SUPPORTED = {"decision": "conversion", "kind": "noul", "d_in": 3072}
 DEFAULT_TARGET = "0.90"
-MODEL = "model_emb.npz"
-APPROVED = "approved.json"
+MODEL = os.path.join(DIR, "model_emb.npz")
+APPROVED = os.path.join(DIR, "approved.json")
 
 
 def sha256_file(path):
