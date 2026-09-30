@@ -58,6 +58,7 @@ group-split; conversion = the paper's core decision)
   escalation target is weaker than the head — route escalations to a human
 ## Production contract (fail-closed)
 
+
 Decision flow for every request:
 
 1. `approve.py` fits Wilson-certified thresholds on calibration evidence and
@@ -87,11 +88,24 @@ Decision flow for every request:
    system accuracy (72.0%). The LLM remains the right tool for open-ended
    reasoning, not this finite-output decision.
 
-Certified thresholds in the current `approved.json` (cal n=1107, Wilson 95%):
-85% -> tau 0.792; 90% -> tau 0.900; 93/95/99% uncertified -> mandatory
-escalation. Dataset is synthetic (GPT-4o): treat all numbers as synthetic
-evidence, not production proof; re-approve on real outcome labels before
-trusting coverage.
+Certified thresholds in the current `approved.json` (cal n=2214, Wilson 95%):
+85% -> tau 0.790; 90% -> 0.918; 93% -> 0.952; 95% -> 0.976; 99% uncertified
+-> mandatory escalation. Dataset is synthetic (GPT-4o): treat all numbers as
+synthetic evidence, not production proof; re-approve on real outcome labels
+before trusting coverage.
+
+## JEV judgment protocol (jev-judge.py / `jev-judge`)
+
+Bounded decisions only. The agent gathers evidence; JEV judges
+ Choice/Score/Noul questions **only in Wilson-certified domains**. Every
+ consequential judgment is recorded (question, evidence, result, confidence,
+ tau, threshold version, action) to `~/.jev/judgments.jsonl`. Out-of-domain
+ questions fail closed: "calibrated judgment unavailable — agent/human
+ judgment required." Never guess, never treat an uncertified probability as
+ evidence. If verified outcomes conflict with JEV, reality wins (monitor.py
+ drift => mandatory fail-closed). Currently certified domain:
+ `sales-conversion` (noul). Extend the domain table ONLY via approve.py on
+ real labels.
 
 ## Hard-won rules (each was a real bug — do not relearn them)
 
