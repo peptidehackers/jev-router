@@ -70,6 +70,20 @@ def main():
     except (json.JSONDecodeError, UnicodeDecodeError):
         return escalate("unparseable request JSON")
 
+    # ---- applicability guard (run BEFORE any validation or model load) ----
+    # The approved model predicts exactly one decision kind. Requests declared
+    # as a different decision must stop here — a right-length vector must never
+    # reach an unrelated prediction model just because it fits the encoder.
+    dec = req.get("decision")
+    if dec is not None and dec != SUPPORTED["decision"]:
+        return escalate(f"unsupported decision {dec!r} (supported: "
+                        f"{SUPPORTED['decision']!r}); refusing to route to an "
+                        f"unrelated prediction model")
+    kind = req.get("kind")
+    if kind is not None and kind != SUPPORTED["kind"]:
+        return escalate(f"unsupported kind {kind!r} (supported: "
+                        f"{SUPPORTED['kind']!r})")
+
     # ---- validate input ----
     if "embedding" not in req:
         return escalate("missing required field: embedding")
